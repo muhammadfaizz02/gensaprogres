@@ -1,0 +1,107 @@
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Mengubah menjadi flex-start agar tidak terpotong */
+  min-height: 100vh; /* Gunakan min-height agar form dapat di-scroll */
+  width: 100%;
+  margin: 0;
+}
+
+.container {
+  padding: 20px;
+  width: 60%;
+  text-align: center;
+  background-color: #fff; /* Tambahan agar terlihat jelas */
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header-image {
+  background: url('../images/bg.jpg') no-repeat center center;
+  background-size: cover;
+  height: 150px;
+  border-radius: 8px 8px 0 0;
+}
+
+h2 {
+  margin-top: 10px;
+  font-size: 22px;
+}
+
+form {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.input-group {
+  width: 48%;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+label {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+input, select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+}
+
+button {
+  width: 100%;
+  background-color: #fbb117;
+  color: black;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #fdd017;
+}
+
+p {
+  margin-top: 10px;
+}
+
+a {
+  color: #fdd017;
+  text-decoration: none;
+}
+
+/* Tambahkan responsivitas agar form menjadi satu kolom pada layar kecil */
+@media (max-width: 768px) {
+  .container {
+    width: 90%; /* Atur lebar lebih kecil untuk layar HP */
+    padding: 10px;
+    background-color: transparent; /* Menghapus warna latar */
+    box-shadow: none; /* Menghapus shadow */
+    border: none; /* Menghapus garis kotak */
+  }
+
+  .header-image {
+    display: none; /* Menghapus foto background */
+  }
+
+  form {
+    flex-direction: column; /* Atur form menjadi kolom */
+  }
+
+  .input-group {
+    width: 100%; /* Buat setiap input mengambil seluruh lebar */
+  }
+}

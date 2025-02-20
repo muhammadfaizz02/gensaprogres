@@ -1,0 +1,120 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+
+.container {
+  display: flex;
+  height: 100vh;
+  background: #fff;
+}
+
+.image-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ddd;
+}
+
+.image-section img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.login-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.login-section h2,
+.login-section h3 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+form {
+  width: 300px;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 15px;
+  background: #fbb117;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background: #fdd017;
+}
+
+.error {
+  color: red;
+  margin-bottom: 10px;
+}
+
+p {
+  margin-top: 10px;
+}
+
+a {
+  color: #fdd017;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+.logo {
+  width: 120px; /* Ukuran logo tetap */
+  height: auto; /* Menjaga proporsi gambar */
+  max-height: 150px; /* Batas tinggi maksimum jika diperlukan */
+  display: block;
+  margin: 0 auto 20px auto; /* Pusatkan logo dan beri jarak ke bawah */
+  object-fit: contain; /* Pastikan gambar tidak terdistorsi */
+  border-radius: 10px; /* Tambahan: buat sudut sedikit melengkung jika diinginkan */
+}
+
+
+/* Responsif untuk perangkat mobile */
+@media (max-width: 768px) {
+  .container {
+      flex-direction: column;
+  }
+
+  .image-section {
+      display: none; /* Sembunyikan gambar di perangkat mobile */
+  }
+
+  .login-section {
+      width: 100%;
+  }
+}
