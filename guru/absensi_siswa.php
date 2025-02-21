@@ -36,20 +36,55 @@ if (!empty($selected_jenjang)) {
 }
 
 // Proses absensi
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['absen'])) {
-  foreach ($_POST['absen'] as $siswa_id => $status_absensi) {
-    $tanggal = date('Y-m-d');
-    $siswa_id = mysqli_real_escape_string($conn, $siswa_id);
-    $status_absensi = mysqli_real_escape_string($conn, $status_absensi);
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['absen']) && is_array($_POST['absen'])) {
+  $tanggal = mysqli_real_escape_string($conn, $_POST['tanggal']);
+  $jam_mulai = mysqli_real_escape_string($conn, $_POST['jam_mulai']);
+  $jam_selesai = mysqli_real_escape_string($conn, $_POST['jam_selesai']);
 
-    $cek_absen = mysqli_query($conn, "SELECT * FROM absensi WHERE siswa_id = '$siswa_id' AND tanggal = '$tanggal'");
-    if (mysqli_num_rows($cek_absen) > 0) {
-      mysqli_query($conn, "UPDATE absensi SET status_absensi = '$status_absensi' WHERE siswa_id = '$siswa_id' AND tanggal = '$tanggal'");
-    } else {
-      mysqli_query($conn, "INSERT INTO absensi (siswa_id, tanggal, status_absensi) VALUES ('$siswa_id', '$tanggal', '$status_absensi')");
+  // Cek apakah tanggal, jam mulai, dan jam selesai terisi
+  if (empty($tanggal) || empty($jam_mulai) || empty($jam_selesai)) {
+    echo "<p style='color: red;'>❌ Harap isi semua field tanggal, jam mulai, dan jam selesai!</p>";
+  } else {
+    // Validasi tiap absensi siswa
+    $error = false;
+    foreach ($_POST['absen'] as $siswa_id => $data) {
+      $status_kehadiran = isset($data['status']) ? $data['status'] : '';
+
+      if (empty($status_kehadiran)) {
+        echo "<p style='color: red;'>❌ Status kehadiran siswa dengan ID $siswa_id harus dipilih!</p>";
+        $error = true;
+      }
+    }
+
+    // Jika tidak ada error, lanjutkan proses penyimpanan
+    if (!$error) {
+      foreach ($_POST['absen'] as $siswa_id => $data) {
+        $siswa_id = mysqli_real_escape_string($conn, $siswa_id);
+        $status_kehadiran = mysqli_real_escape_string($conn, $data['status']);
+        $keterangan = isset($data['keterangan']) ? mysqli_real_escape_string($conn, $data['keterangan']) : '';
+
+        $cek_absen_query = "SELECT * FROM absensi_siswa WHERE id_siswa = '$siswa_id' AND tanggal = '$tanggal'";
+        $cek_absen = mysqli_query($conn, $cek_absen_query);
+
+        if (!$cek_absen) {
+          die("Error pada query cek absensi: " . mysqli_error($conn) . "<br>Query: " . $cek_absen_query);
+        }
+
+        if (mysqli_num_rows($cek_absen) > 0) {
+          $update_query = "UPDATE absensi_siswa SET status_kehadiran = '$status_kehadiran', jam_mulai = '$jam_mulai', jam_selesai = '$jam_selesai', keterangan = '$keterangan' WHERE id_siswa = '$siswa_id' AND tanggal = '$tanggal'";
+          if (!mysqli_query($conn, $update_query)) {
+            die("Error saat update absensi: " . mysqli_error($conn));
+          }
+        } else {
+          $insert_query = "INSERT INTO absensi_siswa (id_siswa, tanggal, jam_mulai, jam_selesai, status_kehadiran, keterangan) VALUES ('$siswa_id', '$tanggal', '$jam_mulai', '$jam_selesai', '$status_kehadiran', '$keterangan')";
+          if (!mysqli_query($conn, $insert_query)) {
+            die("Error saat insert absensi: " . mysqli_error($conn));
+          }
+        }
+      }
+      echo "<p style='color: green;'>✅ Absensi berhasil disimpan!</p>";
     }
   }
-  echo "<p style='color: green;'>✅ Absensi berhasil disimpan!</p>";
 }
 
 // Tentukan halaman yang sedang aktif
@@ -63,194 +98,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Absensi Siswa</title>
-  <link rel="stylesheet" href="../css/dashboard_guru.css">
+  <link rel="stylesheet" href="../css/guru/absensi_siswa.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      display: flex;
-    }
 
-    .profile {
-      display: flex;
-      align-items: center;
-      border-bottom: 2px solid #ddd;
-      margin-bottom: 20px;
-      padding-bottom: 20px;
-    }
-
-    .profile img {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
-      aspect-ratio: 1;
-      border: 2px solid white;
-      margin-right: 15px;
-    }
-
-    .profile h3 {
-      font-size: 18px;
-      margin: 0;
-      word-wrap: break-word;
-      white-space: normal;
-      line-height: 1.2;
-    }
-
-    ul {
-      padding: 0;
-      margin: 0;
-      list-style-type: none;
-    }
-
-    .sidebar {
-      width: 250px;
-      height: 100vh;
-      background-color: #fbb117;
-      color: white;
-      padding: 20px;
-      position: fixed;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.3s ease;
-      transition: background-color 0.3s;
-      height: calc(100vh - 20px);
-    }
-
-    .sidebar a {
-      display: block;
-      color: white;
-      text-decoration: none;
-      padding: 10px;
-      margin-bottom: 10px;
-      background-color: #fbb117;
-      text-align: center;
-      border-radius: 5px;
-      font-size: 16px;
-      font-weight: bold;
-      transition: background-color 0.3s;
-    }
-
-    .sidebar a:hover {
-      background-color: brown;
-    }
-
-    .sidebar a.active {
-      background-color: brown;
-    }
-
-    .logout-button {
-      background-color: red;
-      text-align: center;
-      margin-top: auto;
-      padding: 10px;
-      border-radius: 5px;
-      font-weight: bold;
-      text-decoration: none;
-      color: white;
-    }
-
-    .content {
-      margin-left: 300px;
-      padding: 20px;
-      width: calc(100% - 270px);
-    }
-
-    .menu-toggle {
-      display: none;
-      padding: 10px;
-      background-color: #fbb117;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
-      cursor: pointer;
-      width: auto;
-      height: auto;
-    }
-
-    .menu-toggle:hover {
-      background-color: brown;
-    }
-
-
-    input[type="text"],
-    input[type="file"],
-    button {
-      width: 100%;
-      box-sizing: border-box;
-      margin-bottom: 10px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    table th,
-    table td {
-      padding: 10px;
-      text-align: left;
-      border: 1px solid #ddd;
-    }
-
-    button[type="submit"] {
-      background-color: #fbb117;
-      color: white;
-      border: none;
-      padding: 10px;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 5px;
-      cursor: pointer;
-      width: 150px;
-      margin-top: 20px;
-      /* Jarak tombol dengan elemen lainnya */
-    }
-
-    button[type="submit"]:hover {
-      background-color: brown;
-    }
-
-    /* Atur lebar dropdown */
-    select[name="jenjang_pendidikan"] {
-      width: 300px;
-      padding: 5px;
-      font-size: 16px;
-      margin-bottom: 20px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      box-sizing: border-box;
-    }
-
-    @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
-      }
-
-      .sidebar.active {
-        transform: translateX(0);
-      }
-
-      .content {
-        margin-left: 0;
-        width: 100%;
-      }
-
-      .menu-toggle {
-        display: block;
-      }
-    }
-  </style>
   </style>
 </head>
 
@@ -283,36 +133,47 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
     <?php if (!empty($siswa)): ?>
       <form method="POST">
+        <label for="tanggal">Tanggal:</label>
+        <input type="date" name="tanggal" id="tanggal" value="<?= date('Y-m-d'); ?>" required>
+
+        <label for="jam_mulai">Jam Mulai:</label>
+        <input type="time" name="jam_mulai" id="jam_mulai" value="<?= date('H:i'); ?>" required>
+
+        <label for="jam_selesai">Jam Selesai:</label>
+        <input type="time" name="jam_selesai" id="jam_selesai" required>
+
         <table border="1" cellspacing="0" cellpadding="5">
           <tr>
             <th>Nama Siswa</th>
             <th>Status Kehadiran</th>
+            <th>Keterangan (Opsional)</th>
           </tr>
           <?php foreach ($siswa as $s): ?>
             <tr>
               <td><?= $s['nama_lengkap']; ?> (<?= $s['kelas']; ?>)</td>
               <td>
-                <select name="absen[<?= $s['id']; ?>]">
+                <select name="absen[<?php echo $s['id']; ?>][status]" required>
+                  <option value="">Pilih Status</option>
                   <option value="Hadir">Hadir</option>
-                  <option value="Tidak Hadir">Tidak Hadir</option>
                   <option value="Izin">Izin</option>
                   <option value="Sakit">Sakit</option>
+                  <option value="Alfa">Alfa</option>
                 </select>
+              </td>
+
+              <td>
+                <input type="text" name="absen[<?= $s['id']; ?>][keterangan]" placeholder="Masukkan keterangan (opsional)">
               </td>
             </tr>
           <?php endforeach; ?>
         </table>
-        <button type="submit">Simpan Absensi</button>
+        <button type="submit" style="margin-top: 10px;">Simpan Absensi</button>
       </form>
-    <?php elseif (!empty($selected_jenjang)): ?>
-      <p>Tidak ada siswa ditemukan untuk jenjang ini.</p>
     <?php endif; ?>
   </div>
 
-  <script>
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('active');
-    }
+  <script src="../js/guru/absensi_siswa.js">
+
   </script>
 </body>
 

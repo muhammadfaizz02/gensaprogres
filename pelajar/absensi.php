@@ -1,160 +1,49 @@
+<?php
+session_start();
+include '../config.php';
+
+// Cek apakah user sudah login dan memiliki role 'pelajar'
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'pelajar') {
+  header('Location: ../login.php');
+  exit;
+}
+
+// Ambil ID user dari session
+$user_id = $_SESSION['user_id'];
+
+// Ambil data user untuk sidebar
+$query_user = mysqli_query($conn, "SELECT nama_lengkap, foto FROM users WHERE id = '$user_id'");
+if (mysqli_num_rows($query_user) > 0) {
+  $user = mysqli_fetch_assoc($query_user);
+} else {
+  die("Error: Data user tidak ditemukan!");
+}
+
+// Tentukan path foto profil
+$foto_path = (!empty($user['foto']) && file_exists("../" . $user['foto'])) ? "../" . $user['foto'] : "../uploads/default-avatar.png";
+
+// Ambil data absensi dari tabel absensi_siswa
+$query_absensi = mysqli_query($conn, "SELECT * FROM absensi_siswa WHERE id_siswa = '$user_id' ORDER BY tanggal DESC");
+$absensi_data = mysqli_fetch_all($query_absensi, MYSQLI_ASSOC);
+
+// Tentukan halaman aktif
+$current_page = basename($_SERVER['PHP_SELF']);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      display: flex;
-    }
+  <title>Kehadiran Siswa</title>
+  <link rel="stylesheet" href="../css/pelajar/absensi.css">
 
-    .profile {
-      display: flex;
-      align-items: center;
-      border-bottom: 2px solid #ddd;
-      /* Garis di bawah seluruh profil */
-      margin-bottom: 20px;
-      /* Memberikan jarak antara profil dan menu di bawah */
-      padding-bottom: 20px;
-      /* Menambahkan jarak sebelum garis */
-    }
-
-    .profile img {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
-      aspect-ratio: 1;
-      /* Memastikan gambar tetap bulat dan proporsional */
-      border: 2px solid white;
-      margin-right: 15px;
-    }
-
-    .profile h3 {
-      font-size: 18px;
-      margin: 0;
-      word-wrap: break-word;
-      white-space: normal;
-      /* Izinkan teks turun ke baris berikutnya */
-      line-height: 1.2;
-    }
-
-
-    ul {
-      padding: 0;
-      margin: 0;
-      list-style-type: none;
-    }
-
-    .sidebar {
-      width: 250px;
-      height: 100vh;
-      background-color: #fbb117;
-      color: white;
-      padding: 20px;
-      position: fixed;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.3s ease;
-      transition: background-color 0.3s;
-      height: calc(100vh - 20px);
-    }
-
-    .sidebar a {
-      display: block;
-      color: white;
-      text-decoration: none;
-      padding: 10px;
-      margin-bottom: 10px;
-      background-color: #fbb117;
-      text-align: center;
-      border-radius: 5px;
-      font-size: 16px;
-      font-weight: bold;
-      transition: background-color 0.3s;
-    }
-
-    .sidebar a:hover {
-      background-color: brown;
-    }
-
-    .sidebar a.active {
-      background-color: brown;
-    }
-
-    .logout-button {
-      background-color: red;
-      text-align: center;
-      margin-top: auto;
-      /* Menjaga tombol logout di bagian bawah */
-      padding: 10px;
-      border-radius: 5px;
-      font-weight: bold;
-      text-decoration: none;
-      color: white;
-    }
-
-
-    .content {
-      margin-left: 300px;
-      padding: 20px;
-      width: calc(100% - 270px);
-    }
-
-    .menu-toggle {
-      display: none;
-      padding: 10px;
-      background-color: #fbb117;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
-      cursor: pointer;
-    }
-
-    .menu-toggle:hover {
-      background-color: brown;
-    }
-
-    @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
-      }
-
-      .sidebar.active {
-        transform: translateX(0);
-      }
-
-      .content {
-        margin-left: 0;
-        width: 100%;
-      }
-
-      .menu-toggle {
-        display: block;
-      }
-    }
-  </style>
 </head>
 
 <body>
-  <!-- Tombol Menu Toggle -->
+  <!-- Sidebar dan menu toggle -->
   <button class="menu-toggle" onclick="toggleSidebar()">Menu</button>
-
-  <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
     <div class="profile">
       <img src="<?= htmlspecialchars($foto_path); ?>" alt="Foto Profil">
@@ -166,13 +55,40 @@
     <a href="absensi.php" class="<?= $current_page == 'absensi.php' ? 'active' : ''; ?>">Absensi</a>
     <a href="../logout.php" class="logout-button" style="background-color: red;">Logout</a>
   </div>
+
+  <!-- Konten halaman -->
   <div class="content">
-    <h2>halaman absensi</h2>
+    <h2>Absensi Siswa</h2>
+    <?php if (!empty($absensi_data)): ?>
+      <table>
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Jam Mulai</th>
+            <th>Jam Selesai</th>
+            <th>Status Kehadiran</th>
+            <th>Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($absensi_data as $absen): ?>
+            <tr>
+              <td><?= htmlspecialchars($absen['tanggal']); ?></td>
+              <td><?= htmlspecialchars($absen['jam_mulai']); ?></td>
+              <td><?= htmlspecialchars($absen['jam_selesai']); ?></td>
+              <td><?= htmlspecialchars($absen['status_kehadiran']); ?></td>
+              <td><?= htmlspecialchars($absen['keterangan']); ?></td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php else: ?>
+      <p>Belum ada data absensi yang tersedia.</p>
+    <?php endif; ?>
   </div>
-  <script>
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('active');
-    }
+
+  <script src="../js/pelajar/absensi.js">
+
   </script>
 </body>
 
